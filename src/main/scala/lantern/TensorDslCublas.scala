@@ -1,15 +1,13 @@
 package lantern
 
 import scala.util.continuations._
-
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.{Map => MutableMap}
 import scala.math._
-
 import lms.core.stub._
 import lms.macros.SourceContext
 import lms.core.virtualize
-import lms.collection.mutable.{ArrayOps}
+import lms.collection.mutable.ArrayOps
 import lms.thirdparty._
 import lantern.thirdparty._
 
@@ -87,7 +85,7 @@ trait TensorDslCublas extends TensorDslCPU with GPUOpsExp with CLibs with CuBLAS
   }
 
   def resetCudaMallocAddr(addr: Rep[Long]) = {
-    unchecked[Unit]("cudaMemset((void*)", addr, ", 0, ", getCudaMallocAddr() - addr, ")")
+    unchecked[Unit]("CUDA_CALL(cudaMemset((void*)", addr, ", 0, ", getCudaMallocAddr() - addr, "))")
     unchecked[Unit]("gpuMallocAddr = (void*)", addr)
   }
 
@@ -1207,8 +1205,15 @@ trait TensorDslCublas extends TensorDslCPU with GPUOpsExp with CLibs with CuBLAS
 
 
     // TODO - Supun - Haven't implemented mse for GPU
-    override def mseLoss(x: Tensor, target: Rep[Array[Float]]): Tensor = ???
-    override def mseLoss_grad(input: TensorR, res: TensorR, target: Rep[Array[Float]]): Unit = ???
+    override def mseLoss(x: Tensor, target: Rep[Array[Float]]): Tensor = {
+      val output = mallocArray[Float](x.shape.head)
+      mseLoss_(x.data, target, output, x.shape.head)
+      Tensor(output, x.shape:_*)
+    }
+
+    override def mseLoss_grad(input: TensorR, res: TensorR, target: Rep[Array[Float]]): Unit = {
+      mseLossGrad_(res.d.data, input.d.data, input.x.data, target, input.x.shape.head)
+    }
 
     override def ctcLoss(prob: TensorR, inputLengths: Rep[Array[Int]], labels: Rep[Array[Int]], labelLengths: Rep[Array[Int]]): Tensor = ???
 

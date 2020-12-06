@@ -317,8 +317,9 @@ trait TensorDslCPU extends TensorDsl with CBLASOps {
       if (!bias.isInput) this.inplaceElementWiseOpWithBroadCastOrReduce(bias.d, main.d, (_ + _))
     }
 
-    override def plusBias_v2(main: Tensor, bias: Tensor): Tensor = ???
-    override def plusBias_grad_v2(main: TensorR, bias: TensorR): Unit = ???
+    // TODO - warn for CPU that _v2 and the original are the same
+    override def plusBias_v2(main: Tensor, bias: Tensor): Tensor = plusBias(main, bias)
+    override def plusBias_grad_v2(main: TensorR, bias: TensorR): Unit = plusBias_grad(main, bias)
 
     override def plusEqual(base: Tensor, adder: Tensor): Tensor = {
       this.inplaceElementWiseOpWithBroadCastOrReduce(base, adder, (_ + _))
@@ -1251,10 +1252,8 @@ trait TensorDslCPU extends TensorDsl with CBLASOps {
 
     override def mseLoss_grad(input: TensorR, res: TensorR, target: Rep[Array[Float]]): Unit = {
       generate_comment("'mseLoss_grad' implementation in CPU")
-      var offset = var_new(0)
       for (i <- DataLoop(input.d.shape(0))) {
-        input.d.data(offset + i) += 2 * input.x.data(offset + i) * res.d.data(i)
-        offset += input.d.shape.strides(0)
+        input.d.data(i) += 2 * (input.x.data(i) - target(i)) * res.d.data(i)
       }
     }
 

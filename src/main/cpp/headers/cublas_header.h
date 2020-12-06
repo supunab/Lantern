@@ -2047,3 +2047,23 @@ __global__ void create_attention_mask(int *mask, int i_size, int j_size) {
 
     if (i < i_size && j < j_size && i <= j) mask[i*j_size + j] = 1;
 }
+
+// mseLoss
+__global__ void mse_loss(float *input, float *target, float *output, int size) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x;
+         i < size;
+         i += blockDim.x * gridDim.x)
+      {
+          output[i] = pow(target[i] - input[i], 2);
+      }
+}
+
+// mseLoss_grad
+__global__ void mse_loss_grad(float *output_d, float *input_d, float *input, float *target, int size) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x;
+         i < size;
+         i += blockDim.x * gridDim.x)
+      {
+          input_d[i] += 2 * (input[i] - target[i]) * output_d[i];
+      }
+}
