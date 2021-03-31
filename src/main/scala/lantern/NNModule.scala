@@ -114,6 +114,7 @@ trait NNModule extends TensorDsl {
     val biasOp = if (bias) Some(TensorR(Tensor.zeros(outSize))) else None
 //    def apply(in: TensorR): TensorR @diff = if (bias) in.dot(weight) plusBias biasOp.get else in.dot(weight)
     def apply(in: TensorR): TensorR @diff = if (bias) in.dot(weight) plusBias_v2 biasOp.get else in.dot(weight)
+    def inference(in: Tensor) = if (bias) in.dot(weight.x) plusBias_v2 biasOp.get.x else in.dot(weight.x)
   }
 
   case class Linear1D2(val inSize1: Int, val inSize2: Int, val outSize: Int, val name: String = "Linear1d2") extends Module {
@@ -259,6 +260,13 @@ trait NNModule extends TensorDsl {
       t.dot(w) plusBias_v2 b.get
   }
 
+  private def _linear_inference(t: Tensor, w: Tensor, b: Option[Tensor]) = {
+    if (b.isEmpty)
+      t dot w
+    else
+      t.dot(w).plusBias_v2(b.get)
+  }
+
   /** MultiheadAttention_v2
    * @param embedDim Vector Embedding size of Query. All Q, K, V are projected to embedDim. Also, the final output size.
    * @param numHeads Number of attention heads
@@ -400,6 +408,46 @@ trait NNModule extends TensorDsl {
       val attnOut = attnWeightsAfterDropout.bmm(v, batchDim = 1, transX = false, transY = false, None, Some(vStrides)).resizeNoCheck(tgtLen * batchSize, embedDim)
       finalLinear(attnOut).resizeNoCheck(tgtLen, batchSize, embedDim)
     }
+
+    def inference(q: Tensor, k: Tensor, v: Tensor) = {
+
+    }
+
+    def inference(qkv: Tensor, attnMask: Option[Rep[Array[Int]]]): Tensor = {
+      // self attention
+      assert(attnType == 2, "wrong attention type")
+      val batchSize = qkv.shape(1)
+      val seqLen = qkv.shape(0)
+
+      val qkvBias_t = if (qkvBias.isEmpty) None else Some(qkvBias.get.x)
+      val qkvProj = _linear_inference(qkv.resizeNoCheck(seqLen * batchSize, qkv.shape(2)), qkvProjWeights.get.x, qkvBias_t) // lastDim = embedDim * 3
+
+      // since we don't have a chunk operation, do the chunk manually
+      val q = Tensor(qkvProj.data, seqLen, batchSize, embedDim)
+      val qStrides = qkvProj.shape.strides
+
+      val k = Tensor(slice(qkvProj.data, embedDim), seqLen, batchSize, embedDim)
+      val kStrides = qkvProj.shape.strides
+
+      val v = Tensor(slice(qkvProj.data, 2*embedDim), seqLen, batchSize, embedDim)
+      val vStrides = qkvProj.shape.strides
+
+      val scaling: Rep[Float] = 1 / Math.sqrt(headDim).toFloat
+
+      val attnWeightsRawBeforeScaling = q.bmm(k, batchDim = 1, transX = false, transY = true, Some(qStrides), Some(kStrides))
+      val attnWeightsRaw = attnWeightsRawBeforeScaling * scaling
+
+      val attnWeightsMasked = attnMask match {
+        case Some(mask) => attnWeightsRaw.maskedFill(mask, Float.MinValue, dim0=0, dim1=2)
+        case _ => attnWeightsRaw
+      }
+      val attnWeights = attnWeightsMasked.softmax_v2()
+      val attnWeightsAfterDropout: Tensor = if (dropout == 0) attnWeights else {val (tt, _) = attnWeights.dropout_v2(dropout); tt}
+
+      // output after below bmm - tgtLen, batchSize * numHeads, headDim
+      val attnOut = attnWeightsAfterDropout.bmm(v, batchDim = 1, transX = false, transY = false, None, Some(vStrides)).resizeNoCheck(seqLen * batchSize, embedDim)
+      finalLinear.inference(attnOut).resizeNoCheck(seqLen, batchSize, embedDim)
+    }
   }
 
   /** MultiheadAttention
@@ -481,6 +529,11 @@ trait NNModule extends TensorDsl {
     def apply(input: TensorR) = {
       input.layerNorm(eps, gamma, beta)
     }
+
+    def inference(input: Tensor) = {
+      val (x, _, _) = input.layerNorm(eps, gamma.x, beta.x)
+      x
+    }
   }
 
   case class TransformerEncoderLayer(embedDim: Int, nheads: Int, dimFeedForward: Int, dropOut: Float = 0.0f,
@@ -502,6 +555,19 @@ trait NNModule extends TensorDsl {
       val step6 = enLinear2(step5).resizeNoCheck(src.x.shape: _*)
       val step7 = step6.dropout_v2(dropOut) + step3
       enLayerNorm2(step7)
+    }
+
+    def inference(src: Tensor, attnMask: Option[Rep[Array[Int]]]) = {
+      val step1 = enMHA.inference(src, attnMask)
+      val (step15, _) = step1.dropout_v2(dropOut)
+      val step2 = src + step15
+      val step3 = enLayerNorm1.inference(step2)
+      val step4 = enLinear1.inference(step3.resizeNoCheck(src.shape(0)*src.shape(1), embedDim))
+      val (step5, _) = step4.relu_v2().dropout_v2(dropOut)
+      val step6 = enLinear2.inference(step5).resizeNoCheck(src.shape: _*)
+      val (step65, _) = step6.dropout_v2(dropOut)
+      val step7 = step65 + step3
+      enLayerNorm2.inference(step7)
     }
   }
 
@@ -552,6 +618,19 @@ trait NNModule extends TensorDsl {
       val out = stack(layers(0)(src, attnMask), 1)
       encoderNorm(out)
     }
+
+    def inference(src: Tensor, attnMask: Option[Rep[Array[Int]]]): Tensor = {
+      @scala.annotation.tailrec
+      def stack(prev: Tensor, i: Int = 0): Tensor = {
+        if (i==numLayers)
+          prev
+        else
+          stack(layers(i).inference(prev, attnMask), i + 1)
+      }
+
+      val out = stack(layers(0).inference(src, attnMask), 1)
+      encoderNorm.inference(out)
+    }
   }
 
   case class TransformerDecoder(embedDim: Int, nheads: Int, dimFeedForward: Int, dropOut: Float = 0.0f, numLayers: Int = 1,
@@ -594,7 +673,11 @@ trait NNModule extends TensorDsl {
 
     def apply(indices: Rep[Array[Int]], indices_shape: Seq[Rep[Int]]) = {
       // TODO - indices array must be on the correct device (Can we do an assert of this?)
-      weights.embedding(indices, indices_shape)
+      weights.embedding(indices, indices_shape, paddingIdx)
+    }
+
+    def inference(indices: Rep[Array[Int]], indices_shape: Seq[Rep[Int]]) = {
+      weights.x.embedding(indices, indices_shape, paddingIdx)
     }
   }
 

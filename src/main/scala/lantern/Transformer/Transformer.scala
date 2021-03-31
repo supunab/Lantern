@@ -115,7 +115,6 @@ object Transformer {
 
       @virtualize
       def forEachBatch(f: (Rep[Array[Int]], Rep[Array[Int]], Rep[Int], Rep[Int], Rep[Array[Int]]) => Unit): Unit = {
-        // TODO - make this until numBatches
         for(i <- 0 until numBatches: Rep[Range]) {
           val srcGPU = sliceRead(data, srcBatch(i)).toGPU(batchSize * srcLens(i))
           val tgtGPU = sliceRead(data, tgtBatch(i)).toGPU(batchSize * tgtLens(i))
@@ -167,7 +166,7 @@ object Transformer {
         val transformer = Transformer(embedDim, -1, nheads, numEncoderLayers, numDecoderLayers, dimFeedForward, dropOut)
         val linear = Linear1D(inSize = embedDim, outSize = vocabSize, bias = false)
 
-        // should take two Tensors with word ids, but embedding layer is not implemented yet
+        // indices should be of shape seq_len x batch_size (flatten)
         def apply(srcIdx: Rep[Array[Int]], tgtIdx: Rep[Array[Int]], srcShape: Seq[Rep[Int]], tgtShape: Seq[Rep[Int]]) = {
 //          printf("src shape (%d, %d)\n", srcShape.head, srcShape.last)
 //          printf("tgt shape (%d, %d)\n", tgtShape.head, tgtShape.last)
@@ -175,8 +174,8 @@ object Transformer {
           val srcEmb = embedding(srcIdx, srcShape)
           val tgtEmb = embedding(tgtIdx, tgtShape)
 
-          val srcPosEmbeddings = TensorR(Tensor(posEmbeddingsGPU, srcShape.head, 1, 1), isInput = true)
-          val tgtPosEmbeddings = TensorR(Tensor(posEmbeddingsGPU, tgtShape.head, 1, 1), isInput = true)
+          val srcPosEmbeddings = TensorR(Tensor(posEmbeddingsGPU, srcShape.head, 1, embedDim), isInput = true)
+          val tgtPosEmbeddings = TensorR(Tensor(posEmbeddingsGPU, tgtShape.head, 1, embedDim), isInput = true)
 
           // mask - tgtLen x tgtLen
           val mask = NewGPUArray[Int](tgtShape.head * tgtShape.head)
@@ -243,7 +242,7 @@ object Transformer {
       (o: String) => println("out " + o),
       (e: String) => println("err " + e))
 
-    "nvcc src/out/Transformers/Lantern/transformer2.cu -o  src/out/Transformers/Lantern/transformer2 -Isrc/main/cpp/headers/ -I../lms-clean/src/main/scala/lms/thirdparty/thirdpartyAdaptor/ -lcuda -lcublas -lcudnn" ! logger;
+    "nvcc src/out/Transformers/Lantern/transformer2.cu -o  src/out/Transformers/Lantern/transformer2 -Isrc/main/cpp/headers/ -I../lms-clean/src/main/resources/headers/ -lcuda -lcublas -lcudnn" ! logger;
       "./src/out/Transformers/Lantern/transformer2 q" ! logger;
   }
 }

@@ -1735,8 +1735,10 @@ trait TensorDsl extends DslCPP with Diff {
   }
 
   object TensorR {
+    // TODO - remove this. Just a hack to not allocate d in inference
+    var inference = false
     def apply(a: Tensor, isInput: Boolean = false): TensorR = {
-      val d = if (isInput) Tensor.zeros(2) else Tensor.zeros_like(a)
+      val d = if (isInput || inference) Tensor.zeros(2) else Tensor.zeros_like(a)
       val res = new TensorR(a, d)
       res.isInput = isInput
       res

@@ -290,6 +290,14 @@ trait CuBLASOps extends CBLASOps with CLibs with CudaFunction with StackArrayOps
     cudaFunction[Unit]("nllLoss_grad", Seq(Unwrap(batchSize), lms.core.Backend.Const(1)), Unwrap(in_strides), Unwrap(resD),
       Unwrap(target), Unwrap(inputD))(Seq(0,1,2), Seq(0), Set[Int]())
 
+  def mseLoss_(input: Rep[Array[Float]], target: Rep[Array[Float]], output: Rep[Array[Float]], size: Rep[Int]) =
+    libFunction[Unit]("mse_loss<<<28, 512>>>", Unwrap(input), Unwrap(target), Unwrap(output),
+      Unwrap(size))(Seq(0, 1), Seq(2), Set())
+
+  def mseLossGrad_(output_d: Rep[Array[Float]], input_d: Rep[Array[Float]], input: Rep[Array[Float]], target: Rep[Array[Float]], size: Rep[Int]) =
+    libFunction[Unit]("mse_loss_grad<<<28, 512>>>", Unwrap(output_d), Unwrap(input_d), Unwrap(input), Unwrap(target),
+      Unwrap(size))(Seq(0, 1, 2, 3), Seq(1), Set())
+
   def concat4D_(grid: Rep[Dim3],
       in1: Rep[Array[Float]], dimSize1: Rep[Int], nElement1: Rep[Int],
       in2: Rep[Array[Float]], dimSize2: Rep[Int], nElement2: Rep[Int],

@@ -80,7 +80,7 @@ trait LanternGenCublas extends LanternGenC with CCodeGenCuBLAS {
         case _ =>
           emit(s"CUDA_CALL(cudaMemcpy("); shallow(y); emit(", "); shallow(x); emit(", "); shallow(size); emit(s" * sizeof($ty), cudaMemcpyHostToDevice))")
       }
-      // s"CUDA_CALL(cudaMemcpy(${shallow(y)}, ${shallow(x)}, ${shallow(size)}*sizeof(${ty}), cudaMemcpyHostToDevice))"
+    // s"CUDA_CALL(cudaMemcpy(${shallow(y)}, ${shallow(x)}, ${shallow(size)}*sizeof(${ty}), cudaMemcpyHostToDevice))"
     case n @ Node(s, op, List(x,y,size),_) if op.startsWith("d2hCopy[") =>
       val ty = op.substring(8, op.length - 1).toLowerCase match {
         case "boolean" => "bool"
@@ -133,6 +133,7 @@ trait LanternGenCudnn extends LanternGenCublas with CCodeGenCuDNN with CCodeGenL
     case s: String if s.endsWith("CudnnSeqDataDescriptorT") => "cudnnSeqDataDescriptor_t"
     case s: String if s.endsWith("CudnnWGradModeT") => "cudnnWgradMode_t"
     case s: String if s.endsWith("CudnnAttnDescriptorT") => "cudnnAttnDescriptor_t"
+    case s: String if s.endsWith("CudnnStatusT") => "cudnnStatus_t"
     case _ => super.remap(m)
   }
 
