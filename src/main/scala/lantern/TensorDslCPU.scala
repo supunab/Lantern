@@ -9,7 +9,8 @@ import scala.math._
 import lms.core.stub._
 import lms.macros.SourceContext
 import lms.core.virtualize
-import lms.thirdparty.{CBLASOps}
+import lms.thirdparty.array_computation.CBLASOps
+
 
 trait TensorDslCPU extends TensorDsl with CBLASOps {
 

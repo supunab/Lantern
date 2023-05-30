@@ -77,7 +77,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
   def kcross_correlation = cmacro[CudnnConvolutionMode]("CUDNN_CROSS_CORRELATION")
 
   abstract class CudnnHandleT
-  lazy val cudnnHandle = newStruct[CudnnHandleT]
+  lazy val cudnnHandle = newStruct[CudnnHandleT]("cudnnHandle_t")
 
   // cudnnStatus_t and CUDNN_CALL
   abstract class CudnnStatusT
@@ -90,7 +90,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnTensorDescriptor_t struct
   abstract class CudnnTensorDescriptorT
-  def getCudnnTensorDescriptorT = newStruct[CudnnTensorDescriptorT]
+  def getCudnnTensorDescriptorT = newStruct[CudnnTensorDescriptorT]("cudnnTensorDescriptor_t")
   def cudnnCreateTensorDescriptor(desc: Rep[CudnnTensorDescriptorT]): Rep[CudnnStatusT] =
     libFunction[CudnnStatusT]("cudnnCreateTensorDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetTensor4dDescriptor(desc: Rep[CudnnTensorDescriptorT], layout: Rep[TensorFormat], dtype: Rep[CuDNNDataType], n: Rep[Int],
@@ -123,7 +123,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnFilterDescriptor_t struct
   abstract class CudnnFilterDescriptorT
-  def getCudnnFilterDescriptorT = newStruct[CudnnFilterDescriptorT]
+  def getCudnnFilterDescriptorT = newStruct[CudnnFilterDescriptorT]("cudnnFilterDescriptor_t")
   def cudnnCreateFilterDescriptor(desc: Rep[CudnnFilterDescriptorT]): Rep[CudnnStatusT] =
     libFunction[CudnnStatusT]("cudnnCreateFilterDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetFilter4dDescriptor(desc: Rep[CudnnFilterDescriptorT], dtype: Rep[CuDNNDataType], layout: Rep[TensorFormat], n: Rep[Int],
@@ -162,7 +162,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnReduceTensorDescriptor_t struct
   abstract class CudnnReduceTensorDescriptorT
-  def getCudnnReduceTensorDescriptorT = newStruct[CudnnReduceTensorDescriptorT]
+  def getCudnnReduceTensorDescriptorT = newStruct[CudnnReduceTensorDescriptorT]("cudnnReduceTensorDescriptor_t")
   def cudnnCreateReduceTensorDescriptor(desc: Rep[CudnnReduceTensorDescriptorT]): Rep[CudnnStatusT] =
     libFunction[CudnnStatusT]("cudnnCreateReduceTensorDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetReduceTensorDescriptor(desc: Rep[CudnnReduceTensorDescriptorT], reduceTensorOp: Rep[ReduceTensorOp],
@@ -191,7 +191,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnActivationDescriptor_t struct
   abstract class CudnnActivationDescriptorT
-  def getCudnnActivationDescriptor = newStruct[CudnnActivationDescriptorT]
+  def getCudnnActivationDescriptor = newStruct[CudnnActivationDescriptorT]("cudnnActivationDescriptor_t")
   def cudnnCreateActivationDescriptor(desc: Rep[CudnnActivationDescriptorT]): Rep[CudnnStatusT] =
     libFunction[CudnnStatusT]("cudnnCreateActivationDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetActivationDescriptor(desc: Rep[CudnnActivationDescriptorT], mode: Rep[ActivationType],
@@ -238,7 +238,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnConvolutionDescriptor_t struct
   abstract class CudnnConvolutionDescriptorT
-  def getCudnnConvolutionDescriptorT = newStruct[CudnnConvolutionDescriptorT]
+  def getCudnnConvolutionDescriptorT = newStruct[CudnnConvolutionDescriptorT]("cudnnConvolutionDescriptor_t")
   def cudnnCreateConvolutionDescriptor(desc: Rep[CudnnConvolutionDescriptorT]): Rep[CudnnStatusT] =
     libFunction[CudnnStatusT]("cudnnCreateConvolutionDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetConvolution2dDescriptor(desc: Rep[CudnnConvolutionDescriptorT], padding1: Rep[Int], padding2: Rep[Int],
@@ -278,7 +278,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
   implicit class CudnnConvolutionFwdAlgoPerfTOps(x: Rep[CudnnConvolutionFwdAlgoPerfT]) {
     val algo = readField[CudnnConvolutionFwdAlgoPerfT, CudnnConvolutionFwdAlgoT](x, "algo")
   }
-  def getCudnnConvolutionFwdAlgoPerfT = newStruct[CudnnConvolutionFwdAlgoPerfT]
+  def getCudnnConvolutionFwdAlgoPerfT = newStruct[CudnnConvolutionFwdAlgoPerfT]("cudnnConvolutionFwdAlgoPerf_t")
   def cudnnGetConvolutionForwardAlgorithm_v7(handle: Rep[CudnnHandleT], xDesc: Rep[CudnnTensorDescriptorT], wDesc: Rep[CudnnFilterDescriptorT],
       convDesc: Rep[CudnnConvolutionDescriptorT], yDesc: Rep[CudnnTensorDescriptorT], requestedAlgoCount: Rep[Int],
       returnedAlgoCount: Var[Int], perfResult: Rep[Array[CudnnConvolutionFwdAlgoPerfT]]) =
@@ -314,7 +314,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
   implicit class CudnnConvolutionBwdDataAlgoPerfTOps(x: Rep[CudnnConvolutionBwdDataAlgoPerfT]) {
     val algo = readField[CudnnConvolutionBwdDataAlgoPerfT, CudnnConvolutionBwdDataAlgoT](x, "algo")
   }
-  def getCudnnConvolutionBwdDataAlgoPerfT = newStruct[CudnnConvolutionBwdDataAlgoPerfT]
+  def getCudnnConvolutionBwdDataAlgoPerfT = newStruct[CudnnConvolutionBwdDataAlgoPerfT]("cudnnConvolutionBwdDataAlgoPerf_t")
   def cudnnGetConvolutionBackwardDataAlgorithm_v7(handle: Rep[CudnnHandleT], wDesc: Rep[CudnnFilterDescriptorT],
       yDesc: Rep[CudnnTensorDescriptorT], convDesc: Rep[CudnnConvolutionDescriptorT], xDesc: Rep[CudnnTensorDescriptorT],
       requestedAlgoCount: Rep[Int], returnedAlgoCountBwd: Var[Int], perfResultsBwd: Rep[Array[CudnnConvolutionBwdDataAlgoPerfT]]) = {
@@ -347,7 +347,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
   implicit class CudnnConvolutionBwdFilterAlgoPerfTOps(x: Rep[CudnnConvolutionBwdFilterAlgoPerfT]) {
     val algo = readField[CudnnConvolutionBwdFilterAlgoPerfT, CudnnConvolutionBwdFilterAlgoT](x, "algo")
   }
-  def getCudnnConvolutionBwdFilterAlgoPerfT = newStruct[CudnnConvolutionBwdFilterAlgoPerfT]
+  def getCudnnConvolutionBwdFilterAlgoPerfT = newStruct[CudnnConvolutionBwdFilterAlgoPerfT]("cudnnConvolutionBwdFilterAlgoPerf_t")
   def cudnnGetConvolutionBackwardFilterAlgorithm_v7(handle: Rep[CudnnHandleT], xDesc: Rep[CudnnTensorDescriptorT],
       dyDesc: Rep[CudnnTensorDescriptorT], convDesc: Rep[CudnnConvolutionDescriptorT], dwDesc: Rep[CudnnFilterDescriptorT],
       requestedAlgoCount: Rep[Int], returnedAlgoCount: Var[Int], perfResults: Rep[Array[CudnnConvolutionBwdFilterAlgoPerfT]]) =
@@ -376,7 +376,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnPoolingDescriptor_t
   abstract class CudnnPoolingDescriptorT
-  def getCudnnPoolingDescriptor = newStruct[CudnnPoolingDescriptorT]
+  def getCudnnPoolingDescriptor = newStruct[CudnnPoolingDescriptorT]("cudnnPoolingDescriptor_t")
   def cudnnCreatePoolingDescriptor(desc: Rep[CudnnPoolingDescriptorT]) =
     libFunction[CudnnStatusT]("cudnnCreatePoolingDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetPooling2dDescriptor(desc: Rep[CudnnPoolingDescriptorT], mode: Rep[PoolModes], nanOpt: Rep[NanOpt],
@@ -465,7 +465,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
   def krnnAlgoPersistDynamic = cmacro[CudnnRNNAlgo]("CUDNN_RNN_ALGO_PERSIST_DYNAMIC")
 
   abstract class CudnnRNNDescriptorT
-  def getCudnnRNNDescriptor = newStruct[CudnnRNNDescriptorT]
+  def getCudnnRNNDescriptor = newStruct[CudnnRNNDescriptorT]("CudnnRNNDescriptorT")
   def cudnnCreateRNNDescriptor(desc: Rep[CudnnRNNDescriptorT]) =
     libFunction[CudnnStatusT]("cudnnCreateRNNDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetRNNDescriptor_v6(handle: Rep[CudnnHandleT], rnnDesc: Rep[CudnnRNNDescriptorT], hiddenSize: Rep[Int],
@@ -541,7 +541,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnCTCLossDescriptor_t
   abstract class CudnnCTCLossDescriptorT
-  def getCudnnCTCLossDescriptorT = newStruct[CudnnCTCLossDescriptorT]
+  def getCudnnCTCLossDescriptorT = newStruct[CudnnCTCLossDescriptorT]("cudnnCTCLossDescriptor_t")
   def cudnnCreateCTCLossDescriptor(desc: Rep[CudnnCTCLossDescriptorT]) =
     libFunction[CudnnStatusT]("cudnnCreateCTCLossDescriptor", Unwrap(desc))(Seq[Int](), Seq(0), Set(0))
   def cudnnSetCTCLossDescriptor(desc: Rep[CudnnCTCLossDescriptorT], dtype: Rep[CuDNNDataType]) =
@@ -590,7 +590,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnSeqDataDescriptor_t struct
   abstract class CudnnSeqDataDescriptorT
-  def getCudnnSeqDataDescriptorT = newStruct[CudnnSeqDataDescriptorT]
+  def getCudnnSeqDataDescriptorT = newStruct[CudnnSeqDataDescriptorT]("cudnnSeqDataDescriptor_t")
   def cudnnCreateSeqDataDescriptor(desc: Rep[CudnnSeqDataDescriptorT]) =
     libFunction[CudnnStatusT]("cudnnCreateSeqDataDescriptor", Unwrap(desc))(Seq(), Seq(0), Set(0))
 
@@ -602,7 +602,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnDropoutDescriptor_t
   abstract class CudnnDropoutDescriptorT
-  def getCudnnDropoutDescriptorT = newStruct[CudnnDropoutDescriptorT]
+  def getCudnnDropoutDescriptorT = newStruct[CudnnDropoutDescriptorT]("cudnnDropoutDescriptor_t")
 
   def cudnnCreateDropoutDescriptor(desc: Rep[CudnnDropoutDescriptorT]) =
     libFunction[CudnnStatusT]("cudnnCreateDropoutDescriptor", Unwrap(desc))(Seq(), Seq(0), Set(0))
@@ -648,7 +648,7 @@ trait CuDNNOps extends CuBLASOps with CLibs with StackArrayOps with SizeTOps { b
 
   // cudnnAttnDescriptor_t
   abstract class CudnnAttnDescriptorT
-  def getCudnnAttnDescriptorT = newStruct[CudnnAttnDescriptorT]
+  def getCudnnAttnDescriptorT = newStruct[CudnnAttnDescriptorT]("cudnnAttnDescriptor_t")
 
   def cudnnCreateAttnDescriptor(desc: Rep[CudnnAttnDescriptorT]) =
     libFunction[CudnnStatusT]("cudnnCreateAttnDescriptor", Unwrap(desc))(Seq(), Seq(0), Set(0))

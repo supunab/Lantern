@@ -7,7 +7,8 @@ import lms.core.Backend._
 import lms.core.virtualize
 import lms.core.utils.time
 import lms.macros.{SourceContext, RefinedManifest}
-import lms.thirdparty.{CLibs, CudaFunction, SizeTOps, CBLASOps}
+import lms.thirdparty.{CLibs, SizeTOps}
+import lms.thirdparty.array_computation.{CBLASOps, CudaFunction}
 
 import lms.collection.mutable.{StackArrayOps}
 
@@ -33,7 +34,7 @@ trait CuBLASOps extends CBLASOps with CLibs with CudaFunction with StackArrayOps
   // More Principled Cublas binding approach
   abstract class CublasHandleT
   // lazy val here so that we only ever create one handle
-  lazy val cublasHandle = newStruct[CublasHandleT]
+  lazy val cublasHandle = newStruct[CublasHandleT]("cublasHandle_t")
   lazy val zero = var_new(0.0f)
   lazy val one = var_new(1.0f)
   lazy val minus_one = var_new(-1.0f)
@@ -159,9 +160,9 @@ trait CuBLASOps extends CBLASOps with CLibs with CudaFunction with StackArrayOps
 
   abstract class Dim3
   def dim3(a: Rep[Int], b: Rep[Int], c: Rep[Int]): Rep[Dim3] =
-    Wrap[Dim3](Adapter.g.reflectUnsafe("lib-struct", lms.core.Backend.Const(manifest[Dim3]), Unwrap(a), Unwrap(b), Unwrap(c)))
+    Wrap[Dim3](Adapter.g.reflectUnsafe("lib-struct", lms.core.Backend.Const("dim3"), Unwrap(a), Unwrap(b), Unwrap(c)))
   def dim3(a: Rep[Int], b: Rep[Int]): Rep[Dim3] =
-    Wrap[Dim3](Adapter.g.reflectUnsafe("lib-struct", lms.core.Backend.Const(manifest[Dim3]), Unwrap(a), Unwrap(b)))
+    Wrap[Dim3](Adapter.g.reflectUnsafe("lib-struct", lms.core.Backend.Const("dim3"), Unwrap(a), Unwrap(b)))
 
   def permute2D_(dimGrid: Rep[Dim3], dimBlock: Rep[Dim3], res: Rep[Array[Float]], input: Rep[Array[Float]], shape0: Rep[Int], shape1: Rep[Int]) =
     cudaFunction[Unit]("permute2D", Seq(Unwrap(dimGrid), Unwrap(dimBlock)), Unwrap(res), Unwrap(input),

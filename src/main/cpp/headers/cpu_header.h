@@ -1,5 +1,7 @@
-long HEAP_SIZE_CPU = 1073741826;
+//long HEAP_SIZE_CPU = 1073741826;
+long HEAP_SIZE_CPU = 10737418240;
 void *mallocBase = calloc(HEAP_SIZE_CPU, 1);
+
 void *mallocAddr = mallocBase;
 void *waterMark = mallocBase;
 void *myMalloc(size_t bytes) {

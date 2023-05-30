@@ -13,10 +13,9 @@ import java.io.File
 import java.io.PrintWriter
 
 import lms.thirdparty._
-import lms.thirdparty.{ScannerOps}
 import lantern.thirdparty._
 
-trait LanternGenC extends DslGenCPP with CCodeGenLibs with CCodeGenScannerOps {
+trait LanternGenC extends DslGenCPP with CCodeGenLibs {
 
   class Unknown
   def isInt(d: Backend.Def): Boolean = d match {
@@ -192,7 +191,7 @@ abstract class LanternDriverCublas[A: Manifest, B: Manifest] extends LanternDriv
   backend = BackendCublas()
   override val filetype = ".cu"
 
-  override val compilerCommand = "nvcc -std=c++11 -O3"
+  override val compilerCommand = "nvcc -std=c++11 -O3 -ccbin /usr/bin/x86_64-linux-gnu-gcc-7" // FixME: cuda 10.2 only compiles with gcc <8
   override val sourceFile = s"$lanternPath/snippet.cu"
   override val executable = s"$lanternPath/snippet"
 

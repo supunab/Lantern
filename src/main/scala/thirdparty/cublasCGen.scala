@@ -8,6 +8,7 @@ import lms.core.virtualize
 import lms.core.utils.time
 import lms.macros.SourceContext
 import lms.thirdparty._
+import lms.thirdparty.array_computation._
 
 import lms.collection.mutable.{StackArrayOps}
 
